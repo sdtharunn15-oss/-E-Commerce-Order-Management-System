@@ -1,24 +1,40 @@
-from jose import jwt, JWTError
-from fastapi import Depends, HTTPException
+from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import JWTError, jwt
+from sqlalchemy.orm import Session
 
-from app.utils.jwt import SECRET_KEY, ALGORITHM
+from app.dependencies import get_db
+from app.models.user import User
+
 
 oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login"
 )
 
 
+SECRET_KEY = "ecommerce-secret-key"
+ALGORITHM = "HS256"
+
+
 def get_current_user(
-    token: str = Depends(oauth2_scheme)
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
 ):
+
     try:
         payload = jwt.decode(
             token,
             SECRET_KEY,
             algorithms=[ALGORITHM]
         )
-        return payload
+
+        email = payload.get("sub")
+
+        if email is None:
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid token"
+            )
 
     except JWTError:
         raise HTTPException(
@@ -27,25 +43,32 @@ def get_current_user(
         )
 
 
-def admin_required(
-    user=Depends(get_current_user)
-):
-    if user["role"] != "admin":
+    user = db.query(User).filter(
+        User.email == email
+    ).first()
+
+
+    if user is None:
         raise HTTPException(
-            status_code=403,
-            detail="Admin access required"
+            status_code=401,
+            detail="User not found"
         )
+
 
     return user
 
 
-def customer_required(
-    user=Depends(get_current_user)
+
+def admin_required(
+    user: User = Depends(get_current_user)
 ):
-    if user["role"] != "customer":
+
+    if user.role != "admin":
+
         raise HTTPException(
-            status_code=403,
-            detail="Customer access required"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
         )
+
 
     return user
