@@ -1,0 +1,94 @@
+-- USERS
+
+CREATE TABLE users (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name VARCHAR(100) NOT NULL,
+email VARCHAR(100) UNIQUE NOT NULL,
+password VARCHAR(255) NOT NULL,
+role VARCHAR(20) DEFAULT 'customer'
+);
+
+-- CUSTOMERS
+
+CREATE TABLE customers (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name VARCHAR(100) NOT NULL,
+email VARCHAR(100) UNIQUE NOT NULL,
+phone VARCHAR(20)
+);
+
+-- PRODUCTS
+
+CREATE TABLE products (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+name VARCHAR(100) NOT NULL,
+category VARCHAR(100),
+description TEXT,
+price FLOAT NOT NULL,
+stock INTEGER NOT NULL,
+is_active BOOLEAN DEFAULT TRUE
+);
+
+-- ORDERS
+
+CREATE TABLE orders (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+customer_id INTEGER NOT NULL,
+order_date DATETIME,
+status VARCHAR(50) DEFAULT 'Pending',
+total_amount FLOAT DEFAULT 0,
+
+```
+FOREIGN KEY (customer_id)
+REFERENCES customers(id)
+```
+
+);
+
+-- ORDER ITEMS
+
+CREATE TABLE order_items (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+order_id INTEGER NOT NULL,
+product_id INTEGER NOT NULL,
+quantity INTEGER NOT NULL,
+price FLOAT NOT NULL,
+
+```
+FOREIGN KEY (order_id)
+REFERENCES orders(id),
+
+FOREIGN KEY (product_id)
+REFERENCES products(id)
+```
+
+);
+
+-- SHIPMENTS
+
+CREATE TABLE shipments (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+order_id INTEGER UNIQUE NOT NULL,
+tracking_number VARCHAR(100) UNIQUE NOT NULL,
+shipment_status VARCHAR(50) DEFAULT 'Pending',
+
+```
+FOREIGN KEY (order_id)
+REFERENCES orders(id)
+```
+
+);
+
+-- INDEXES
+
+CREATE INDEX idx_customer_email
+ON customers(email);
+
+CREATE INDEX idx_product_category
+ON products(category);
+
+CREATE INDEX idx_order_status
+ON orders(status);
+
+CREATE INDEX idx_shipment_status
+ON shipments(shipment_status);
